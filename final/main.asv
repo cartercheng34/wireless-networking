@@ -10,8 +10,8 @@ BS_X = length * [0, 0, -1.5, -1.5, 0, 1.5, 1.5, 0, -1.5, -3, -3, -3, -1.5, 0, 1.
 BS_Y = ISD * [0, 1,  0.5, -0.5, -1, -0.5, 0.5, 2, 1.5, 1, 0, -1, -1.5, -2, -1.5, -1, 0, 1, 1.5] ;
 macro_ISD = 10000;
 macro_length = macro_ISD/sqrt(3);
-ISD_WIFI = 35;
-length_WIFI = ISD_WIFI/sqrt(3);
+ISD_WIFI = 50;
+
 %% map construct
 pos_x = [121.579430 , 121.573145 , 121.568102 , 121.558201 , 121.557052 , 121.558791 , 121.553004 , 121.543437 , 121.543584 ...
          121.543757 , 121.544040 , 121.544226 , 121.551995 , 121.546894 , 121.555592 , 121.567212 , 121.575079 , 121.585064 ...
@@ -47,11 +47,10 @@ for i = 1:23
     for_orientation(1 , i) = atan((mrt_y(1 , i+1) - mrt_y(1 , i) )/ ((mrt_x(1 , i+1) - mrt_x(1 , i) ))) + pi;%denote ith to (i+1)th
     back_orientation(1 , i+1) = for_orientation(1 , i) - pi;
 end
-
+%}
 for i = 1:24
     MRT_s{1 , i} = MRT_station(mrt_x(1 , i) , mrt_y(1 , i) , i);
 end
-%}
 scatter(mrt_x(1 , :) , mrt_y(1 , :) , 'r');
 hold on
 for i = 1:base_num
@@ -73,7 +72,5 @@ for i = 1:extend_num
 end
 
 for i = 1:24
-    [x_vec_tmp , y_vec_tmp] = draw_hex2(mrt_x(1 , i) , mrt_y(1 , i) , length_WIFI , ISD_WIFI);
-    WIFI{1 , i} = BaseStation(i , mrt_x(1 , i) , mrt_y(1 , i) , x_vec_tmp , y_vec_tmp);
-    MRT_s{1 , i} = MRT_station(mrt_x(1 , i) , mrt_y(1 , i) , i);
+    [x_vec_tmp , y_vec_tmp] = draw_hex2()
 end
