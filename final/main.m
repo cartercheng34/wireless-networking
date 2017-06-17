@@ -57,6 +57,7 @@ for i = 1:24
     MRT_s{1 , i} = MRT_station(mrt_x(1 , i) , mrt_y(1 , i) , i);
 end
 %}
+figure;
 scatter(mrt_x(1 , :) , mrt_y(1 , :) , 'r');
 hold on
 for i = 1:base_num
@@ -81,4 +82,26 @@ for i = 1:24
     [x_vec_tmp , y_vec_tmp] = draw_hex2(mrt_x(1 , i) , mrt_y(1 , i) , length_WIFI , ISD_WIFI);
     WIFI{1 , i} = BaseStation(i , mrt_x(1 , i) , mrt_y(1 , i) , x_vec_tmp , y_vec_tmp);
     MRT_s{1 , i} = MRT_station(mrt_x(1 , i) , mrt_y(1 , i) , i);
+end
+
+%% Generate First MEs
+acc = 1; % accelaration
+dec = -1; % decelaration
+maxSpeed = floor(70*5/18); % MRT max speed = 70km/h
+train = cell(1, 1);
+id_startStation = 1;
+id_endStation = 2;
+pauseTime = 20;
+distToNextStation = sqrt((MRT_s{1, id_endStation}.pos_x - MRT_s{1, id_startStation}.pos_x)^2 + ...
+                            (MRT_s{1, id_endStation}.pos_y - MRT_s{1, id_startStation}.pos_y)^2);
+train{1, 1} = MobileEquipment(1, MRT_s{1, id_startStation}.id, MRT_s{1, id_endStation}.id, ...
+                                MRT_s{1, id_startStation}.pos_x, MRT_s{1, id_startStation}.pos_y, ...
+                                (MRT_s{1, id_endStation}.pos_x - MRT_s{1, id_startStation}.pos_x)/distToNextStation, ...
+                                (MRT_s{1, id_endStation}.pos_y - MRT_s{1, id_startStation}.pos_y)/distToNextStation, ...
+                                1, 1, pauseTime);
+scatter(train{1, 1}.pos_x, train{1, 1}.pos_y, 'g');
+%% Simulation
+simTime = 1000;
+for i = 1:simTime  
+    train{1, 1} = MovingModel(train{1, 1}, maxSpeed, acc, dec, MRT_s);
 end
