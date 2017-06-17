@@ -11,6 +11,9 @@ function ME = MovingModel(ME, maxSpeed, acc, dec, MRT_s)
             ME.velocity = 0;
             ME.status = 1;
             ME.pauseTime = 20;
+            if ME.id_station_end == 10
+                ME.pauseTime = 40;
+            end
         end
         return
     end
