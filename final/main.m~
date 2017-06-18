@@ -105,7 +105,7 @@ Trains{1, 1} = InitializeTrain(1, MRT_s{1, 1}, MRT_s{1, 2}, trainLength); % Odd 
 Trains{1, 2} = InitializeTrain(2, MRT_s{1, 24}, MRT_s{1, 23}, trainLength); % Even IDs for Southbound trains
 
 %% Simulation
-simTime = 1300;
+simTime = 200;
 Count_VH = 0;
 satisfication1 = zeros(1, simTime);
 satisfication2 = zeros(1, simTime);
@@ -231,12 +231,12 @@ for t = 1:simTime
                 micro_i = (BS_id(BS) - micro_j)/19 + 1;
                 d_BS = sqrt((Trains{1, train}.car{1,people}.pos_x-micro_BS{micro_i,micro_j}.pos_x)^2 ...
                     + (Trains{1, train}.car{1,people}.pos_y-micro_BS{micro_i,micro_j}.pos_y)^2);
-                power2 = BS_power(BS) * 10^(Mobile_gain/10) * gain(BS) * (m_h*height(BS))^2/d_BS^4;
-                numOfpeople2 = 1;
-                interference2 = 0;
+                power = BS_power(BS) * 10^(Mobile_gain/10) * gain(BS) * (m_h*height(BS))^2/d_BS^4;
+                numOfpeople = 1;
+                interference = 0;
                 for others = 1:Trains{1,train}.numOfME
-                    if Trains{1,train}.car{1,others}.id_Micro == BS_id(BS)
-                        numOfpeople2 = numOfpeople2 + 1;
+                    if Trains{1,train}.car{1,others}.id_BS_connected == BS_id(BS)
+                        numOfpeople = numOfpeople + 1;
                         micro_j = rem(BS_id(BS),19);
                         if micro_j == 0
                             micro_j = 19;
@@ -244,12 +244,12 @@ for t = 1:simTime
                         micro_i = (BS_id(BS) - micro_j)/19 + 1;
                         d_BS = sqrt((Trains{1, train}.car{1,others}.pos_x-micro_BS{micro_i,micro_j}.pos_x)^2 ...
                             + (Trains{1, train}.car{1,others}.pos_y-micro_BS{micro_i,micro_j}.pos_y)^2);
-                        interference2 = interference2 + BS_power(BS) * 10^(Mobile_gain/10) * gain(BS) * (m_h*height(BS))^2/d_BS^4;
+                        interference = interference + BS_power(BS) * 10^(Mobile_gain/10) * gain(BS) * (m_h*height(BS))^2/d_BS^4;
                     end
                 end
-                B(BS) = B(BS) / numOfpeople2;
-                interference2 = interference2 - power2;
-                F(BS) = power2 / (interference2+Noise_wo_bw*B(BS));
+                B(BS) = B(BS) / numOfpeople;
+                interference = interference - power;
+                F(BS) = power / (interference+Noise_wo_bw*B(BS));
             end
             w2 = WD(F(1:2),P(1:2),B(1:2),max(F(1:2)),max(P(1:2)),max(B(1:2)),min(F(1:2)),min(P(1:2)),min(B(1:2)));
             ID2 = VHDF(BS_id(1:2),F(1:2),P(1:2),B(1:2),w2);
@@ -344,5 +344,3 @@ figure;
 plot(xaxis,satisfication1(xaxis),'r');
 hold on
 plot(xaxis,satisfication2(xaxis),'g');
-xlabel('Time(s)');
-ylabel('User satisfication');

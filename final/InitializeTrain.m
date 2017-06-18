@@ -18,6 +18,6 @@ function newTrain = InitializeTrain(id, startStation, endStation, trainLength)
                                              unitVector_start_end_y, ...
                                              1, 1, pauseTime, ...
                                              R(i)*unitVector_start_end_x, R(i)*unitVector_start_end_y);
-        scatter(newTrain.car{1, i}.pos_x, newTrain.car{1, i}.pos_y, 'k');
+        % scatter(newTrain.car{1, i}.pos_x, newTrain.car{1, i}.pos_y, 'k');
     end
 end

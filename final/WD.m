@@ -1,32 +1,41 @@
-function weight = WD(C, F, P, B, Cmax, Fmax, Pmax, Bmax, Cmin, Fmin, Pmin, Bmin )
-% C: cost of service
+function weight = WD(F, P, B, Fmax, Pmax, Bmax, Fmin, Pmin, Bmin )
 % F: performance of network (SINR)
 % P: power consumption
 % B: bandwidth of network
-    Nc = (C-Cmin) ./ (Cmax-Cmin);
-    Nf = (F-Fmin) ./ (Fmax-Fmin);
-    Np = (P-Pmin) ./ (Pmax-Pmin);
-    Nb = (B-Bmin) ./ (Bmax-Bmin);
+    F_dif = (Fmax-Fmin);
+    if F_dif == 0
+        F_dif = 1;
+    end
+    P_dif = (Pmax-Pmin);
+    if P_dif == 0
+        P_dif = 1;
+    end
+    B_dif = (Bmax-Bmin);
+    if B_dif == 0
+        B_dif = 1;
+    end
+    Nf = (F-Fmin) ./ F_dif;
+    Np = (P-Pmin) ./ P_dif;
+    Nb = (B-Bmin) ./ B_dif;
     
-    mc = sum(Nc) / length(Nc);
-    mf = sum(Nf) / length(Nf);
-    mp = sum(Np) / length(Np);
-    mb = sum(Nb) / length(Nb);
+    s = size(Nf);
+    Size = s(2);
     
-    sigma_c = sqrt(sum((Nc-mc) .^ 2) / (length(Nc)-1));
-    sigma_f = sqrt(sum((Nf-mf) .^ 2) / (length(Nf)-1));
-    sigma_p = sqrt(sum((Np-mp) .^ 2) / (length(Np)-1));
-    sigma_b = sqrt(sum((Nb-mb) .^ 2) / (length(Nb)-1));
+    mf = sum(Nf) / Size;
+    mp = sum(Np) / Size;
+    mb = sum(Nb) / Size;
+    Size = Size - 1;
+    sigma_f = sqrt(sum((Nf-mf) .^ 2) / Size);
+    sigma_p = sqrt(sum((Np-mp) .^ 2) / Size);
+    sigma_b = sqrt(sum((Nb-mb) .^ 2) / Size);
     
-    phi_c = exp(-mc+sigma_c);
     phi_f = exp(-mf+sigma_f);
     phi_p = exp(-mp+sigma_p);
     phi_b = exp(-mb+sigma_b);
-    phi = phi_c + phi_f + phi_p + phi_b;
+    phi = phi_f + phi_p + phi_b;
     
-    weight(1:4) = 0;
-    weight(1) = phi_c / phi;
-    weight(2) = phi_f / phi;
-    weight(3) = phi_p / phi;
-    weight(4) = phi_b / phi;
+    weight(1:3) = 0;
+    weight(1) = phi_f / phi;
+    weight(2) = phi_p / phi;
+    weight(3) = phi_b / phi;
 end
