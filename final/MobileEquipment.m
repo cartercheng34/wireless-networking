@@ -10,9 +10,12 @@ classdef MobileEquipment
         velocity
         status %% 1 = accelerating, 0 = constant speed, -1 = decelarating, -2 = stays in station;
         pauseTime
+        pos_relativeToStation_x
+        pos_relativeToStation_y
+        reconfig %% set to 1 if ME just changed its status from -2 to 1
     end
     methods
-        function ME = MobileEquipment(id, index_start, index_end, x, y, u_x, u_y, v, status, pauseTime)
+        function ME = MobileEquipment(id, index_start, index_end, x, y, u_x, u_y, v, status, pauseTime, rel_x, rel_y)
             ME.id_ME = id;
             ME.id_station_start = index_start;
             ME.id_station_end = index_end;
@@ -23,6 +26,9 @@ classdef MobileEquipment
             ME.velocity = v;
             ME.status = status;
             ME.pauseTime = pauseTime;
+            ME.pos_relativeToStation_x = rel_x;
+            ME.pos_relativeToStation_y = rel_y;
+            ME.reconfig = 0;
         end
     end
 end
