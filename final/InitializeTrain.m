@@ -1,0 +1,23 @@
+function newTrain = InitializeTrain(id, startStation, endStation, trainLength)
+    pauseTime = 20;
+    distBetweenStations = sqrt((endStation.pos_x - startStation.pos_x)^2 + ...
+                               (endStation.pos_y - startStation.pos_y)^2);
+    numOfME_getOn = poissrnd(startStation.lambda_in);
+    while numOfME_getOn == 0
+        numOfME_getOn = poissrnd(startStation.lambda_in);
+    end
+    R = -(trainLength/2) + trainLength*rand(1, numOfME_getOn);
+    newTrain = Train(id, startStation.id, endStation.id, numOfME_getOn, 1);
+    for i = 1:numOfME_getOn
+        unitVector_start_end_x = (endStation.pos_x - startStation.pos_x)/distBetweenStations;
+        unitVector_start_end_y = (endStation.pos_y - startStation.pos_y)/distBetweenStations;
+        newTrain.car{1, i} = MobileEquipment(i, startStation.id, endStation.id, ...
+                                             startStation.pos_x + R(i)*unitVector_start_end_x, ...
+                                             startStation.pos_y + R(i)*unitVector_start_end_y, ...
+                                             unitVector_start_end_x, ...
+                                             unitVector_start_end_y, ...
+                                             1, 1, pauseTime, ...
+                                             R(i)*unitVector_start_end_x, R(i)*unitVector_start_end_y);
+        scatter(newTrain.car{1, i}.pos_x, newTrain.car{1, i}.pos_y, 'k');
+    end
+end
