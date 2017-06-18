@@ -81,27 +81,43 @@ end
 for i = 1:24
     [x_vec_tmp , y_vec_tmp] = draw_hex2(mrt_x(1 , i) , mrt_y(1 , i) , length_WIFI , ISD_WIFI);
     WIFI{1 , i} = BaseStation(i , mrt_x(1 , i) , mrt_y(1 , i) , x_vec_tmp , y_vec_tmp);
-    MRT_s{1 , i} = MRT_station(mrt_x(1 , i) , mrt_y(1 , i) , i);
+    MRT_s{1 , i} = MRT_station(mrt_x(1 , i) , mrt_y(1 , i) , i, 1, 10);
 end
 
-%% Generate First MEs
+%% Generate First Trains
 acc = 1; % accelaration
 dec = -1; % decelaration
 maxSpeed = floor(70*5/18); % MRT max speed = 70km/h
-train = cell(1, 1);
-id_startStation = 1;
-id_endStation = 2;
-pauseTime = 20;
-distToNextStation = sqrt((MRT_s{1, id_endStation}.pos_x - MRT_s{1, id_startStation}.pos_x)^2 + ...
-                            (MRT_s{1, id_endStation}.pos_y - MRT_s{1, id_startStation}.pos_y)^2);
-train{1, 1} = MobileEquipment(1, MRT_s{1, id_startStation}.id, MRT_s{1, id_endStation}.id, ...
-                                MRT_s{1, id_startStation}.pos_x, MRT_s{1, id_startStation}.pos_y, ...
-                                (MRT_s{1, id_endStation}.pos_x - MRT_s{1, id_startStation}.pos_x)/distToNextStation, ...
-                                (MRT_s{1, id_endStation}.pos_y - MRT_s{1, id_startStation}.pos_y)/distToNextStation, ...
-                                1, 1, pauseTime);
-scatter(train{1, 1}.pos_x, train{1, 1}.pos_y, 'g');
+trainLength = 55.12; % Total train length for Wenhu Line
+Trains = cell(1, 4); % Total 4 trains will be generated
+Trains{1, 1} = InitializeTrain(1, MRT_s{1, 1}, MRT_s{1, 2}, trainLength); % Odd IDs for Northbound trains
+Trains{1, 2} = InitializeTrain(2, MRT_s{1, 24}, MRT_s{1, 23}, trainLength); % Even IDs for Southbound trains
+
 %% Simulation
-simTime = 1000;
-for i = 1:simTime  
-    train{1, 1} = MovingModel(train{1, 1}, maxSpeed, acc, dec, MRT_s);
+simTime = 200;
+for t = 1:simTime
+    Trains = Simulation(t, Trains, trainLength, maxSpeed, acc, dec, MRT_s);
+end
+%{
+for i = 1:simTime
+    for j = 1:Trains{1, 1}.numOfME
+        Trains{1, 1}.car{1, j} = MovingModel_NorthBound(Trains{1, 1}.car{1, j}, maxSpeed, acc, dec, MRT_s);
+    end
+    if Trains{1, 1}.car{1, 1}.reconfig == 1
+        Trains{1, 1} = RegenerateTrain(MRT_s{1, Trains{1, 1}.car{1, 1}.id_station_start}, ...
+                                       MRT_s{1, Trains{1, 1}.car{1, 1}.id_station_end}, ...
+                                       Trains{1, 1}, trainLength);
+    end
+end
+%}
+if simTime >= 180
+    numOfTrains = 4;
+else
+    numOfTrains = 2;
+end
+    
+for trainID = 1:numOfTrains
+    for j = 1:Trains{1, trainID}.numOfME
+        scatter(Trains{1, trainID}.car{1, j}.pos_x, Trains{1, trainID}.car{1, j}.pos_y, 'g');
+    end
 end
