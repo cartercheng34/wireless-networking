@@ -21,6 +21,7 @@ WIFI_ps = 5;
 Micro_ps = 8;
 WIFI_power = -60; % dBm
 Micro_power = 30; % dBm
+Mobile_power = 23; % dBm
 WIFI_gain = 2; % dB
 Micro_gain = 14; % dB
 Mobile_gain = 14; % dB
@@ -58,16 +59,6 @@ for i = 1:23
     end
 end
 for_orientation = zeros(1 , 24); % forward direction
-%{
-for i = 1:23
-    for_orientation(1 , i) = atan((mrt_y(1 , i+1) - mrt_y(1 , i) )/ ((mrt_x(1 , i+1) - mrt_x(1 , i) ))) + pi;%denote ith to (i+1)th
-    back_orientation(1 , i+1) = for_orientation(1 , i) - pi;
-end
-
-for i = 1:24
-    MRT_s{1 , i} = MRT_station(mrt_x(1 , i) , mrt_y(1 , i) , i);
-end
-%}
 figure;
 scatter(mrt_x(1 , :) , mrt_y(1 , :) , 'r');
 hold on
@@ -105,7 +96,7 @@ Trains{1, 1} = InitializeTrain(1, MRT_s{1, 1}, MRT_s{1, 2}, trainLength); % Odd 
 Trains{1, 2} = InitializeTrain(2, MRT_s{1, 24}, MRT_s{1, 23}, trainLength); % Even IDs for Southbound trains
 
 %% Simulation
-simTime = 1300;
+simTime = 1200;
 Count_VH = 0;
 satisfication1 = zeros(1, simTime);
 satisfication2 = zeros(1, simTime);
@@ -116,215 +107,17 @@ for t = 1:simTime
         numOfTrains = 2;
     end
     Trains = Simulation(t, Trains, trainLength, maxSpeed, acc, dec, MRT_s);
-    %{
-    BS_id = [0,0];
-    height = [0,0];
-    gain = [0,0];
-    BS_power = [0,0];
-    F = [0,0];
-    P = [0,0];
-    B = [0,0];
-    %}
     for train = 1:numOfTrains
-        BS_id = [0,0];
-        height = [0,0];
-        gain = [0,0];
-        BS_power = [0,0];
-        F = [0,0];
-        P = [0,0];
-        B = [0,0];
-        d = zeros(1 , 7*19);
-        count = 1;
-        for i = 1:(extend_num+1)
-            for j = 1:base_num
-                d(count) = sqrt((Trains{1, train}.car{1,1}.pos_x-micro_BS{i,j}.pos_x)^2 +...
-                    (Trains{1, train}.car{1,1}.pos_y-micro_BS{i,j}.pos_y)^2);
-                count = count + 1;
-            end
-        end
-        BS_id(1) = find(d == min(d));
-        d(find(d == min(d))) = [];
-        BS_id(2) = find(d == min(d));
-        flag = 0;
-        d_end = sqrt((Trains{1, train}.car{1,1}.pos_x-WIFI{1,Trains{1, 1}.car{1,1}.id_station_end}.pos_x)^2 + (Trains{1, train}.car{1,1}.pos_y-WIFI{1,Trains{1, train}.car{1,1}.id_station_end}.pos_y)^2);
-        d_start = sqrt((Trains{1, train}.car{1,1}.pos_x-WIFI{1,Trains{1, 1}.car{1,1}.id_station_start}.pos_x)^2 + (Trains{1, train}.car{1,1}.pos_y-WIFI{1,Trains{1, train}.car{1,1}.id_station_start}.pos_y)^2);
-        if d_end < 35
-            BS_id = [BS_id,WIFI{1,Trains{1, train}.car{1,1}.id_station_end}.id];
-            flag = 1;
-        end
-        if d_start < 35
-            BS_id = [BS_id,WIFI{1,Trains{1, train}.car{1,1}.id_station_start}.id];
-            flag = 1;
-        end
-        for index = 1:2
-            P(index) = 8;
-            height(index) = b_h;
-            gain(index) = 10^(14/10);
-            B(index) = Micro_bw;
-            BS_power(index) = 10^(Micro_power/10)*10^(-3);
-        end
-        s = size(BS_id);
-        if flag == 1
-            for index = 3:s(2)
-                P = [P,5];
-                height = [height,9];
-                gain = [gain,10^(2/10)];
-                B = [B,WIFI_bw];
-                BS_power = [BS_power,10^(WIFI_power/10)*10^(-3)];
-                F = [F,0];
-            end
-        end
-%%
-        for people = 1:Trains{1,train}.numOfME
-            for BS = 1:s(2)
-                if BS <= 2
-                    micro_j = rem(BS_id(BS),19);
-                    if micro_j == 0
-                        micro_j = 19;
-                    end
-                    micro_i = (BS_id(BS) - micro_j)/19 + 1;
-                    d_BS = sqrt((Trains{1, train}.car{1,people}.pos_x-micro_BS{micro_i,micro_j}.pos_x)^2 ...
-                            + (Trains{1, train}.car{1,people}.pos_y-micro_BS{micro_i,micro_j}.pos_y)^2);
-                else
-                    d_BS = sqrt((Trains{1, train}.car{1,people}.pos_x-WIFI{1,BS_id(BS)-200}.pos_x)^2 ...
-                            + (Trains{1, train}.car{1,people}.pos_y-WIFI{1,BS_id(BS)-200}.pos_y)^2);
-                power = BS_power(BS) * 10^(Mobile_gain/10) * gain(BS) * (m_h*height(BS))^2/d_BS^4;
-                end
-                numOfpeople = 1;
-                interference = 0;
-                for others = 1:Trains{1,train}.numOfME
-                    if Trains{1,train}.car{1,others}.id_BS_connected == BS_id(BS)
-                        numOfpeople = numOfpeople + 1;
-                        if BS <= 2
-                            micro_j = rem(BS_id(BS),19);
-                            if micro_j == 0
-                                micro_j = 19;
-                            end
-                            micro_i = (BS_id(BS) - micro_j)/19 + 1;
-                            d_BS = sqrt((Trains{1, train}.car{1,others}.pos_x-micro_BS{micro_i,micro_j}.pos_x)^2 ...
-                                + (Trains{1, train}.car{1,others}.pos_y-micro_BS{micro_i,micro_j}.pos_y)^2);
-                        else
-                            d_BS = sqrt((Trains{1, train}.car{1,others}.pos_x-WIFI{1,BS_id(BS)-200}.pos_x)^2 ...
-                                + (Trains{1, train}.car{1,others}.pos_y-WIFI{1,BS_id(BS)-200}.pos_y)^2);
-                        end
-                        interference = interference + BS_power(BS) * 10^(Mobile_gain/10) * gain(BS) * (m_h*height(BS))^2/d_BS^4;
-                    end
-                end
-                B(BS) = B(BS) / numOfpeople;
-                interference = interference - power;
-                F(BS) = power / (interference+Noise_wo_bw*B(BS));
-            end
-            w1 = WD(F,P,B,max(F),max(P),max(B),min(F),min(P),min(B));
-            ID1 = VHDF(BS_id,F,P,B,w1);
-            Trains{1,train}.car{1,people}.id_BS_connected = ID1;
- %{
-            if (Trains{1,train}.car{1,people}.id_BS_connected < 200) && (ID1 > 200)
-                Count_VH = Count_VH + 1;
-            end
- %}
-            %%
-            for BS = 1:2
-                micro_j = rem(BS_id(BS),19);
-                if micro_j == 0
-                    micro_j = 19;
-                end
-                micro_i = (BS_id(BS) - micro_j)/19 + 1;
-                d_BS = sqrt((Trains{1, train}.car{1,people}.pos_x-micro_BS{micro_i,micro_j}.pos_x)^2 ...
-                    + (Trains{1, train}.car{1,people}.pos_y-micro_BS{micro_i,micro_j}.pos_y)^2);
-                power2 = BS_power(BS) * 10^(Mobile_gain/10) * gain(BS) * (m_h*height(BS))^2/d_BS^4;
-                numOfpeople2 = 1;
-                interference2 = 0;
-                for others = 1:Trains{1,train}.numOfME
-                    if Trains{1,train}.car{1,others}.id_Micro == BS_id(BS)
-                        numOfpeople2 = numOfpeople2 + 1;
-                        micro_j = rem(BS_id(BS),19);
-                        if micro_j == 0
-                            micro_j = 19;
-                        end
-                        micro_i = (BS_id(BS) - micro_j)/19 + 1;
-                        d_BS = sqrt((Trains{1, train}.car{1,others}.pos_x-micro_BS{micro_i,micro_j}.pos_x)^2 ...
-                            + (Trains{1, train}.car{1,others}.pos_y-micro_BS{micro_i,micro_j}.pos_y)^2);
-                        interference2 = interference2 + BS_power(BS) * 10^(Mobile_gain/10) * gain(BS) * (m_h*height(BS))^2/d_BS^4;
-                    end
-                end
-                B(BS) = B(BS) / numOfpeople2;
-                interference2 = interference2 - power2;
-                F(BS) = power2 / (interference2+Noise_wo_bw*B(BS));
-            end
-            w2 = WD(F(1:2),P(1:2),B(1:2),max(F(1:2)),max(P(1:2)),max(B(1:2)),min(F(1:2)),min(P(1:2)),min(B(1:2)));
-            ID2 = VHDF(BS_id(1:2),F(1:2),P(1:2),B(1:2),w2);
-            Trains{1,train}.car{1,people}.id_Micro = ID2;
-            %satisfication(t) = satisfication(t) + Sat(F(iD),P(iD),B(iD),prefer_F,prefer_P,prefer_B,w);
-        end
-        B_num1 = [0];
-        B_ID1 = [0];
-        B_num2 = [0];
-        B_ID2 = [0];
+        BS = determineMicro(extend_num + 1, base_num, Trains{1, train}, micro_BS);
+        Trains = SimUser(Trains, numOfTrains, train, BS, base_num, micro_BS, WIFI,...
+            Micro_power, WIFI_power, Mobile_gain, Micro_gain, WIFI_gain, m_h,...
+            b_h, WIFI_h, 1, Micro_bw, WIFI_bw, Noise_wo_bw, Micro_ps, WIFI_ps);
+        Trains = SimUser(Trains, numOfTrains, train, BS, base_num, micro_BS, WIFI,...
+            Micro_power, WIFI_power, Mobile_gain, Micro_gain, WIFI_gain, m_h,...
+            b_h, WIFI_h, 2, Micro_bw, WIFI_bw, Noise_wo_bw, Micro_ps, WIFI_ps);
         if train == 1
-        for user = 1:Trains{1,train}.numOfME
-            S = size(B_ID1);
-            Size = S(2);
-            if B_ID1(1) == 0
-                B_num1(1) = 1;
-                B_ID1(1) = Trains{1,train}.car{1,user}.id_BS_connected;
-            else
-                check = 0;
-                for b = 1:Size
-                    if Trains{1,train}.car{1,user}.id_BS_connected == B_ID1(b)
-                       B_num1(b) = B_num1(b) + 1;
-                       check = 1;
-                       break;
-                    end
-                end
-                if check == 0
-                    B_ID1 = [B_ID1,Trains{1,train}.car{1,user}.id_BS_connected];
-                    B_num1 = [B_num1,1];
-                end
-            end
-        end
-        SS = size(B_ID1);
-        for node = 1:SS(2)
-            for num = 1:B_num1(node)
-                if B_ID1 > 200 
-                    bw = WIFI_bw;
-                else
-                    bw = Micro_bw;
-                end
-                satisfication1(t) = satisfication1(t) + Sat(1,1,bw/B_num1(node),1,1,prefer_B,w); 
-            end
-        end
-        for user = 1:Trains{1,train}.numOfME
-            S = size(B_ID2);
-            Size = S(2);
-            if B_ID2(1) == 0
-                B_num2(1) = 1;
-                B_ID2(1) = Trains{1,train}.car{1,user}.id_Micro;
-            else
-                check = 0;
-                for b = 1:Size
-                    if Trains{1,train}.car{1,user}.id_Micro == B_ID2(b)
-                       B_num2(b) = B_num2(b) + 1;
-                       check = 1;
-                       break;
-                    end
-                end
-                if check == 0
-                    B_ID2 = [B_ID2,Trains{1,train}.car{1,user}.id_Micro];
-                    B_num2 = [B_num2,1];
-                end
-            end
-        end
-        SS = size(B_ID2);
-        for node = 1:SS(2)
-            for num = 1:B_num2(node)
-                if B_ID > 200 
-                    bw = WIFI_bw;
-                else
-                    bw = Micro_bw;
-                end
-                satisfication2(t) = satisfication2(t) + Sat(1,1,bw/B_num2(node),1,1,prefer_B,w); 
-            end
-        end
+            satisfication1(t) = SumOfSat(Trains{1,1}, 1, WIFI_bw, Micro_bw, prefer_B);
+            satisfication2(t) = SumOfSat(Trains{1,1}, 2, WIFI_bw, Micro_bw, prefer_B);
         end
     end
 end
@@ -340,7 +133,7 @@ for trainID = 1:numOfTrains
     end
 end
 xaxis = 1:simTime;
-figure;
+figure
 plot(xaxis,satisfication1(xaxis),'r');
 hold on
 plot(xaxis,satisfication2(xaxis),'g');

@@ -14,7 +14,6 @@ classdef MobileEquipment
         pos_relativeToStation_y
         reconfig %% set to 1 if ME just changed its status from -2 to 1
         id_BS_connected
-        id_Micro
     end
     methods
         function ME = MobileEquipment(id, index_start, index_end, x, y, u_x, u_y, v, status, pauseTime, rel_x, rel_y)
@@ -31,11 +30,7 @@ classdef MobileEquipment
             ME.pos_relativeToStation_x = rel_x;
             ME.pos_relativeToStation_y = rel_y;
             ME.reconfig = 0;
-            ME.id_BS_connected = 0;
-            ME.id_Micro = 0;
-        end
-        function ME = handoff(id)
-            ME.id_BS_connected = id;
+            ME.id_BS_connected = [0, 0];
         end
     end
 end

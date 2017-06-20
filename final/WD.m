@@ -4,7 +4,7 @@ function weight = WD(F, P, B, Fmax, Pmax, Bmax, Fmin, Pmin, Bmin )
 % B: bandwidth of network
     F_dif = (Fmax-Fmin);
     if F_dif == 0
-        F_dif = 1;
+        F_dif = Fmin;
     end
     P_dif = (Pmax-Pmin);
     if P_dif == 0
