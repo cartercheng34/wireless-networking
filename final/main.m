@@ -7,8 +7,6 @@ ISD = 2000;
 length = ISD/sqrt(3);
 BS_X = length * [0, 0, -1.5, -1.5, 0, 1.5, 1.5, 0, -1.5, -3, -3, -3, -1.5, 0, 1.5, 3, 3, 3, 1.5] ;
 BS_Y = ISD * [0, 1,  0.5, -0.5, -1, -0.5, 0.5, 2, 1.5, 1, 0, -1, -1.5, -2, -1.5, -1, 0, 1, 1.5] ;
-macro_ISD = 10000;
-macro_length = macro_ISD/sqrt(3);
 ISD_WIFI = 35;
 length_WIFI = ISD_WIFI/sqrt(3);
 m_h = 7.5;
@@ -26,8 +24,6 @@ WIFI_gain = 2; % dB
 Micro_gain = 14; % dB
 Mobile_gain = 14; % dB
 Noise_wo_bw = 1.38 * (10^-23) * (273+27);
-prefer_F = 0.0000001;
-prefer_P = 4;
 prefer_B = Micro_bw / 20;
 %% map construct
 pos_x = [121.579430 , 121.573145 , 121.568102 , 121.558201 , 121.557052 , 121.558791 , 121.553004 , 121.543437 , 121.543584 ...
@@ -96,10 +92,12 @@ Trains{1, 1} = InitializeTrain(1, MRT_s{1, 1}, MRT_s{1, 2}, trainLength); % Odd 
 Trains{1, 2} = InitializeTrain(2, MRT_s{1, 24}, MRT_s{1, 23}, trainLength); % Even IDs for Southbound trains
 
 %% Simulation
-simTime = 1200;
-Count_VH = 0;
+simTime = 1500;
 satisfication1 = zeros(1, simTime);
 satisfication2 = zeros(1, simTime);
+record_wifi = zeros(24,simTime);
+record_micro = zeros(19*7,simTime);
+Time = zeros(1,simTime);
 for t = 1:simTime
     if t >= 180
         numOfTrains = 4;
@@ -107,6 +105,14 @@ for t = 1:simTime
         numOfTrains = 2;
     end
     Trains = Simulation(t, Trains, trainLength, maxSpeed, acc, dec, MRT_s);
+    if Trains{1, 1}.id_endStation == Trains{1, 2}.id_startStation 
+        Time(t) = Time(t) + 1;
+    end
+    if t >= 180
+        if Trains{1, 1}.id_endStation == Trains{1, 4}.id_startStation
+            Time(t) = Time(t) + 2;
+        end
+    end
     for train = 1:numOfTrains
         BS = determineMicro(extend_num + 1, base_num, Trains{1, train}, micro_BS);
         Trains = SimUser(Trains, numOfTrains, train, BS, base_num, micro_BS, WIFI,...
@@ -115,9 +121,14 @@ for t = 1:simTime
         Trains = SimUser(Trains, numOfTrains, train, BS, base_num, micro_BS, WIFI,...
             Micro_power, WIFI_power, Mobile_gain, Micro_gain, WIFI_gain, m_h,...
             b_h, WIFI_h, 2, Micro_bw, WIFI_bw, Noise_wo_bw, Micro_ps, WIFI_ps);
-        if train == 1
-            satisfication1(t) = SumOfSat(Trains{1,1}, 1, WIFI_bw, Micro_bw, prefer_B);
-            satisfication2(t) = SumOfSat(Trains{1,1}, 2, WIFI_bw, Micro_bw, prefer_B);
+    end
+    satisfication1(t) = SumOfSat(Trains{1,1}, 1, WIFI_bw, Micro_bw, prefer_B);
+    satisfication2(t) = SumOfSat(Trains{1,1}, 2, WIFI_bw, Micro_bw, prefer_B);
+    for user = 1:Trains{1,1}.numOfME
+        if Trains{1,1}.car{1, user}.id_BS_connected(1) > 200
+            record_wifi(Trains{1,1}.car{1, user}.id_BS_connected(1)-200,t) = record_wifi(Trains{1,1}.car{1, user}.id_BS_connected(1)-200,t) + 1;
+        else
+            record_micro(Trains{1,1}.car{1, user}.id_BS_connected(1),t) = record_micro(Trains{1,1}.car{1, user}.id_BS_connected(1),t) + 1;
         end
     end
 end

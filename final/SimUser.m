@@ -43,27 +43,30 @@ function Trains = SimUser(Trains, numOfTrains, trainNum, BS_id, numOfCell, Micro
             power = Power(bs) * 10^(Mobile_gain/10) * BS_gain(bs) * (m_h*height(bs))^2/d^4;
             numOfUser = 1;
             interference = 0;
-            for user = 1:Trains{1, trainNum}.numOfME
-                d = 0;
-                if Trains{1, trainNum}.car{1, user}.id_BS_connected(Type) == BS(bs)
-                    numOfUser = numOfUser + 1;
-                    if bs <= 2
-                        micro_j = rem(BS(bs), numOfCell);
-                        if micro_j == 0
-                            micro_j = numOfCell;
+            for t = 1:numOfTrains
+                for user = 1:Trains{1, trainNum}.numOfME
+                    d = 0;
+                    if t~= trainNum || user ~= people
+                        if Trains{1, trainNum}.car{1, user}.id_BS_connected(Type) == BS(bs)
+                            numOfUser = numOfUser + 1;
+                            if bs <= 2
+                                micro_j = rem(BS(bs), numOfCell);
+                                if micro_j == 0
+                                    micro_j = numOfCell;
+                                end
+                                micro_i = (BS(bs) - micro_j) / numOfCell + 1;
+                                d = sqrt((Trains{1, trainNum}.car{1, user}.pos_x - Micro{micro_i, micro_j}.pos_x)^2 + ...
+                                        (Trains{1, trainNum}.car{1, user}.pos_y - Micro{micro_i, micro_j}.pos_y)^2);
+                            else
+                                d = sqrt((Trains{1, trainNum}.car{1, user}.pos_x - WIFI{1, BS(bs) - 200}.pos_x)^2 + ...
+                                        (Trains{1, trainNum}.car{1, user}.pos_y - WIFI{1, BS(bs) - 200}.pos_y)^2);
+                            end
+                            interference = interference + Power(bs) * 10^(Mobile_gain/10) * BS_gain(bs) * (m_h*height(bs))^2/d^4;
                         end
-                        micro_i = (BS(bs) - micro_j) / numOfCell + 1;
-                        d = sqrt((Trains{1, trainNum}.car{1, user}.pos_x - Micro{micro_i, micro_j}.pos_x)^2 + ...
-                                (Trains{1, trainNum}.car{1, user}.pos_y - Micro{micro_i, micro_j}.pos_y)^2);
-                    else
-                        d = sqrt((Trains{1, trainNum}.car{1, user}.pos_x - WIFI{1, BS(bs) - 200}.pos_x)^2 + ...
-                                (Trains{1, trainNum}.car{1, user}.pos_y - WIFI{1, BS(bs) - 200}.pos_y)^2);
                     end
-                    interference = interference + Power(bs) * 10^(Mobile_gain/10) * BS_gain(bs) * (m_h*height(bs))^2/d^4;
                 end
             end
             B(bs) = B(bs) / numOfUser;
-            interference = interference - power;
             F(bs) = power / (interference + Noise*B(bs));
         end
         w = WD(F,P,B,max(F),max(P),max(B),min(F),min(P),min(B));
